@@ -1,11 +1,11 @@
 package za.co.howtogeek.geoquiz
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,9 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.automirrored.filled.ArrowRight
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.ArrowRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -35,11 +32,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import za.co.howtogeek.geoquiz.R.string
 import za.co.howtogeek.geoquiz.ui.theme.GeoQuizTheme
-import kotlin.text.get
+
 
 enum class QuizQuestion(val textResId: Int, val answer: Boolean) {
     AUSTRALIA(R.string.question_australia, true),
@@ -49,12 +45,16 @@ enum class QuizQuestion(val textResId: Int, val answer: Boolean) {
     AMERICAS(R.string.question_americas, true),
     ASIA(R.string.question_asia, true); // The semicolon here is important
 }
+
+private const val TAG = "MainActivity"
+
 class MainActivity : ComponentActivity() {
 
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d(TAG, "onCreate(Bundle?) called")
         enableEdgeToEdge()
         setContent {
             GeoQuizTheme {
@@ -72,6 +72,37 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    // onStart
+    override fun onStart() {
+        super.onStart()
+        Log.d(TAG, "onStart() called")
+    }
+
+    // onResume
+    override fun onResume() {
+        super.onResume()
+        Log.d(TAG, "onResume() called")
+    }
+
+    // onPause
+    override fun onPause() {
+        super.onPause()
+        Log.d(TAG, "onPause() called")
+    }
+
+    // onStop
+    override fun onStop() {
+        super.onStop()
+        Log.d(TAG, "onStop() called")
+    }
+
+    // onDestroy
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d(TAG, "onDestroy() called")
+    }
+
 }
 
 @Composable
