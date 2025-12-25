@@ -2,10 +2,12 @@ package za.co.howtogeek.geoquiz
 
 import android.os.Bundle
 import android.util.Log
+import android.widget.Button
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -35,30 +37,34 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import za.co.howtogeek.geoquiz.R.string
 import za.co.howtogeek.geoquiz.ui.theme.GeoQuizTheme
+import androidx.compose.runtime.collectAsState
 
 
+
+/*
 enum class QuizQuestion(val textResId: Int, val answer: Boolean) {
-    AUSTRALIA(R.string.question_australia, true),
-    OCEANS(R.string.question_oceans, true),
-    MIDEAST(R.string.question_mideast, false),
-    AFRICA(R.string.question_africa, false),
-    AMERICAS(R.string.question_americas, true),
-    ASIA(R.string.question_asia, true); // The semicolon here is important
+    ; // The semicolon here is important
 }
+*/
+
 
 private const val TAG = "MainActivity"
-
 class MainActivity : ComponentActivity() {
 
-
+    private lateinit var trueButton: Button
+    private lateinit var falseButton: Button
+    private val quizViewModel: QuizViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         Log.d(TAG, "onCreate(Bundle?) called")
+        Log.d(TAG, "onCreate: Got a QuizViewModel: $quizViewModel")
         enableEdgeToEdge()
         setContent {
             GeoQuizTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+
                     Column(
                         modifier = Modifier
                             .padding(innerPadding)
@@ -66,7 +72,8 @@ class MainActivity : ComponentActivity() {
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        QuizContent()
+                        // Pass the viewModel instance to QuizContent
+                        QuizContent(quizViewModel = quizViewModel)
                     }
                 }
             }
@@ -106,13 +113,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun QuizContent(){
-
+fun QuizContent(quizViewModel: QuizViewModel){
     val context = LocalContext.current
 
-    val questionBank = QuizQuestion.entries
-
-    var currentIndex by remember { mutableStateOf(0) }
+    // Collect the value from the StateFlow
+    val currentQuestion by quizViewModel.currentQuestion.collectAsState()
 
     Column(
         modifier = Modifier
@@ -122,27 +127,29 @@ fun QuizContent(){
         horizontalAlignment = Alignment.CenterHorizontally,
     ){
         Text(
-            text = stringResource(questionBank[currentIndex].textResId),
+            //text = stringResource(questionTextResId),
+            text = stringResource(id = currentQuestion?.textResId ?:R.string.question_placeholder),
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .padding(top = 32.dp)
                 .fillMaxWidth()
                 .clickable(true, onClick = {
-                    currentIndex = (currentIndex + 1) % questionBank.size
+                    quizViewModel.moveToNext()
+                    //updateQuestion()
                 })
         )
-        Row(modifier = Modifier
-            .padding(16.dp)
-            .fillMaxWidth()) {
-
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+        ) {
             // True Button
             Button(
                 onClick = {
-                    checkAnswer(true, questionBank[currentIndex], context)
+                    checkAnswer(true, currentQuestion?.answer ?: false, context)
+                    quizViewModel.markQuestionAsAnswered()
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1F)
+                enabled = currentQuestion?.answered == false,
             ) {
                 Text(stringResource(string.trueButton))
             }
@@ -150,78 +157,78 @@ fun QuizContent(){
             // False Button
             Button(
                 onClick = {
-                    checkAnswer(false, questionBank[currentIndex], context)
+                    checkAnswer(false, currentQuestion?.answer ?: false, context)
+                    quizViewModel.markQuestionAsAnswered()
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1F)
+                enabled = currentQuestion?.answered == false
             ) {
                 Text(
                     text = stringResource(string.falseButton)
                 )
             }
         }
-        // Next Button
-        /*Button(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            onClick = {
-                //Toast.makeText(context, "Next Question", Toast.LENGTH_SHORT).show()
-                currentIndex = (currentIndex + 1) % questionBank.size
-            }
-        ) {
-         */
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            if (currentIndex > 0) {
+            // Previous Button
+            //if (quizViewModel.currentIndex > 0) {
                 TextButton(
                     onClick = {
-                        currentIndex = (currentIndex - 1) % questionBank.size
+                        quizViewModel.moveToPrevious()
+                        //updateQuestion()
                     }
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = stringResource(string.previousButton)
                     )
-                    Text(text = if (currentIndex > 0) "Previous" else "")
+                    Text("Previous")
                 }
-            } else {
-                    // Add an empty Spacer to maintain the layout when the button is hidden
-                    Spacer(Modifier.weight(1f))
-                }
-                TextButton(
-                    onClick = {
-                        currentIndex = (currentIndex +1) % questionBank.size
-                    }
-                ) {
-                    Text("Next")
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = stringResource(string.nextButton)
-                    )
-                }
-            }
             //}
+
+            // Next Button
+            TextButton(
+                onClick = {
+                    //currentIndex = (currentIndex +1) % questionBank.size
+                    quizViewModel.moveToNext()
+                    //updateQuestion()
+                }
+            ) {
+                Text("Next")
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = stringResource(string.nextButton)
+                )
+            }
         }
+
+        //}
     }
 
-    fun checkAnswer(userAnswer: Boolean, currentQuestion: QuizQuestion, context: android.content.Context){
-        val correctAnswer = currentQuestion.answer
-
-        val messageResId = if (userAnswer == correctAnswer){
-            R.string.correct_toast
-        } else {
-            R.string.incorrect_toast
-        }
-        Toast.makeText(context, messageResId, Toast.LENGTH_SHORT).show()
+    /*
+    fun updateQuestion(){
+        val questionTextResId = quizViewModel.currentQuestionText
     }
+     */
+}
 
-    @Composable
-    fun QuestionRows(modifier: Modifier = Modifier) {
-        Text(text = stringResource(string.question_text))
+
+// --- 4. Update checkAnswer function ---
+// It no longer needs the whole Question object
+fun checkAnswer(userAnswer: Boolean, correctAnswer: Boolean, context: android.content.Context) {
+    val messageResId = if (userAnswer == correctAnswer) {
+        R.string.correct_toast
+    } else {
+        R.string.incorrect_toast
     }
+    Toast.makeText(context, messageResId, Toast.LENGTH_SHORT).show()
+}
+
+@Composable
+fun QuestionRows(modifier: Modifier = Modifier) {
+    Text(text = stringResource(string.question_text))
+}
