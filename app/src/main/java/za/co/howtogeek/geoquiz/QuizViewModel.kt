@@ -1,6 +1,7 @@
 package za.co.howtogeek.geoquiz
 
 import android.util.Log
+import androidx.annotation.StringRes
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -31,8 +32,18 @@ class QuizViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
             Question(R.string.question_asia, true)
         )
     )
-    val questionBank: StateFlow<List<Question?>> = _questionBank.asStateFlow()
+    val questionBank: StateFlow<List<Question>> = _questionBank.asStateFlow()
     val currentIndex: StateFlow<Int> = savedStateHandle.getStateFlow(CURRENT_INDEX_KEY, 0)
+
+    private val _answeredQuestionsCount = MutableStateFlow(0)
+    val answeredQuestionsCount: StateFlow<Int> = _answeredQuestionsCount.asStateFlow()
+
+    private val _correctAnswersCount = MutableStateFlow(0)
+    val correctAnswersCount: StateFlow<Int> = _correctAnswersCount.asStateFlow()
+
+
+    private val _quizFinished = MutableStateFlow(false)
+    val quizFinished: StateFlow<Boolean> = _quizFinished.asStateFlow()
 
     val currentQuestion: StateFlow<Question?> = combine(currentIndex, questionBank){index, questions ->
         questions.getOrNull(index)
@@ -42,8 +53,22 @@ class QuizViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
         initialValue = _questionBank.value.first()
     )
 
+    fun checkAnswer(userAnswer: Boolean): Int {
+        val correctAnswer = currentQuestion.value?.answer ?: false
+        val messageResId = if (userAnswer == correctAnswer) {
+            _correctAnswersCount.value++
+            R.string.correct_toast
+            //Log.d(TAG, "Correct Answers: ${_correctAnswersCount.value} out of ${_questionBank.value.size}")
+        } else {
+            R.string.incorrect_toast
+            //Log.d(TAG, "Incorrect Answers: ${_correctAnswersCount.value.-_questionBank.value.size} out of ${_questionBank.value.size}")
+        }
+        markQuestionAsAnswered()
+        return messageResId
+    }
+
     // This function will update the 'answered' status
-    fun markQuestionAsAnswered() {
+    private fun markQuestionAsAnswered() {
         val currentQuestions = _questionBank.value.toMutableList()
         val questionIndex = currentIndex.value
         val question = currentQuestions.getOrNull(questionIndex)
@@ -53,33 +78,19 @@ class QuizViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
             currentQuestions[questionIndex] = question.copy(answered = true)
             // Update the state flow with the new list
             _questionBank.value = currentQuestions
+            _answeredQuestionsCount.value++
+            if (_answeredQuestionsCount.value == _questionBank.value.size) {
+                _quizFinished.value = true
+            }
         }
-      }
-
-    /*
-    fun moveToNext() {
-        savedStateHandle[CURRENT_INDEX_KEY] = (currentIndex.value + 1) % _questionBank.value.size
     }
-
-    /**
-     * Moves to the previous question, wrapping around to the end if necessary.
-     */
-    fun moveToPrevious() {
-        savedStateHandle[CURRENT_INDEX_KEY] = (currentIndex.value - 1 + _questionBank.value.size) % _questionBank.value.size
-    }
-     */
 
     fun moveToNext() {
         savedStateHandle[CURRENT_INDEX_KEY] = (currentIndex.value + 1) % _questionBank.value.size
     }
 
     fun moveToPrevious(){
-        // Add questionBank.size to ensure the result is non-negative before the modulo
-        //if (currentIndex > 0) {
         savedStateHandle[CURRENT_INDEX_KEY] = (currentIndex.value - 1 + _questionBank.value.size) % questionBank.value.size
-        //}
     }
-
-    //
 
 }

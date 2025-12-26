@@ -41,18 +41,9 @@ import androidx.compose.runtime.collectAsState
 
 
 
-/*
-enum class QuizQuestion(val textResId: Int, val answer: Boolean) {
-    ; // The semicolon here is important
-}
-*/
-
-
 private const val TAG = "MainActivity"
 class MainActivity : ComponentActivity() {
 
-    private lateinit var trueButton: Button
-    private lateinit var falseButton: Button
     private val quizViewModel: QuizViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -145,22 +136,32 @@ fun QuizContent(quizViewModel: QuizViewModel){
         ) {
             // True Button
             Button(
-                onClick = {
-                    checkAnswer(true, currentQuestion?.answer ?: false, context)
-                    quizViewModel.markQuestionAsAnswered()
+                onClick = { 
+                    val messageResId = quizViewModel.checkAnswer(true)
+                    Toast.makeText(context, messageResId, Toast.LENGTH_SHORT).show()
+                    if (quizViewModel.answeredQuestionsCount.value == 6){
+                        Toast.makeText(context, "Quiz Finished. You achieved ${quizViewModel.correctAnswersCount.value} correct answers out 6.", Toast.LENGTH_SHORT).show()
+                    }
                 },
                 enabled = currentQuestion?.answered == false,
+                modifier = Modifier.weight(1f)
             ) {
                 Text(stringResource(string.trueButton))
             }
 
+            Spacer(Modifier.padding(horizontal = 16.dp))
+
             // False Button
             Button(
-                onClick = {
-                    checkAnswer(false, currentQuestion?.answer ?: false, context)
-                    quizViewModel.markQuestionAsAnswered()
+                onClick = { 
+                    val messageResId = quizViewModel.checkAnswer(false)
+                    Toast.makeText(context, messageResId, Toast.LENGTH_SHORT).show()
+                    if (quizViewModel.answeredQuestionsCount.value == 5){
+                        Toast.makeText(context, "Quiz Finished. You achieved ${quizViewModel.correctAnswersCount} correct answers out 6.", Toast.LENGTH_SHORT).show()
+                    }
                 },
-                enabled = currentQuestion?.answered == false
+                enabled = currentQuestion?.answered == false,
+                modifier = Modifier.weight(1f)
             ) {
                 Text(
                     text = stringResource(string.falseButton)
@@ -195,6 +196,7 @@ fun QuizContent(quizViewModel: QuizViewModel){
                 onClick = {
                     //currentIndex = (currentIndex +1) % questionBank.size
                     quizViewModel.moveToNext()
+
                     //updateQuestion()
                 }
             ) {
@@ -205,27 +207,7 @@ fun QuizContent(quizViewModel: QuizViewModel){
                 )
             }
         }
-
-        //}
     }
-
-    /*
-    fun updateQuestion(){
-        val questionTextResId = quizViewModel.currentQuestionText
-    }
-     */
-}
-
-
-// --- 4. Update checkAnswer function ---
-// It no longer needs the whole Question object
-fun checkAnswer(userAnswer: Boolean, correctAnswer: Boolean, context: android.content.Context) {
-    val messageResId = if (userAnswer == correctAnswer) {
-        R.string.correct_toast
-    } else {
-        R.string.incorrect_toast
-    }
-    Toast.makeText(context, messageResId, Toast.LENGTH_SHORT).show()
 }
 
 @Composable
