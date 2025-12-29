@@ -37,6 +37,8 @@ class QuizViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
 
     private val _answeredQuestionsCount = MutableStateFlow(0)
     val answeredQuestionsCount: StateFlow<Int> = _answeredQuestionsCount.asStateFlow()
+    val answeredQuestions: Int
+        get() = answeredQuestionsCount.value
 
     private val _correctAnswersCount = MutableStateFlow(0)
     val correctAnswersCount: StateFlow<Int> = _correctAnswersCount.asStateFlow()
@@ -58,10 +60,8 @@ class QuizViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
         val messageResId = if (userAnswer == correctAnswer) {
             _correctAnswersCount.value++
             R.string.correct_toast
-            //Log.d(TAG, "Correct Answers: ${_correctAnswersCount.value} out of ${_questionBank.value.size}")
         } else {
             R.string.incorrect_toast
-            //Log.d(TAG, "Incorrect Answers: ${_correctAnswersCount.value.-_questionBank.value.size} out of ${_questionBank.value.size}")
         }
         markQuestionAsAnswered()
         return messageResId
